@@ -16,7 +16,11 @@ client = MultiServerMCPClient({
     "aviationstack": {
         "transport": "stdio",
         "command": "uvx",
-        "args": ["aviationstack-mcp"],
+        "args": [
+            "--with",
+            "fastmcp",
+            "aviationstack-mcp"
+        ],
         "env": AVIATION_ENV
     },
     "weather": {

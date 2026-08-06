@@ -4,11 +4,11 @@ from langchain_groq import ChatGroq
 
 from config.settings import GROQ_API_KEY, logger
 from graph.state import TravelState
-from mcp_client.tools import (
+from mcp_client.adapters import (
     aviation_mcp_call,
-    tavily_mcp_search,
-    weather_mcp_search,
-    forecast_mcp_search,
+    tavily_mcp_call,
+    weather_mcp_call,
+    forecast_mcp_call,
     extract_destination
 )
 
@@ -76,7 +76,7 @@ def flight_agent(state: TravelState):
 def hotel_agent(state: TravelState):
     logger.info("Executing Hotel Agent...")
     query = f"Best hotel and stays for {state['user_query']}"
-    response = asyncio.run(tavily_mcp_search(query))
+    response = asyncio.run(tavily_mcp_call(query))
 
     return {
         "hotel_results": str(response),
@@ -90,8 +90,8 @@ def weather_agent(state: TravelState):
     city = extract_destination(state["user_query"])
     logger.info(f"Extracted destination for weather: {city}")
 
-    weather_data = asyncio.run(weather_mcp_search(city))
-    forecast_data = asyncio.run(forecast_mcp_search(city))
+    weather_data = asyncio.run(weather_mcp_call(city))
+    forecast_data = asyncio.run(forecast_mcp_call(city))
 
     weather_summary = f"""Current Weather:
 {weather_data}

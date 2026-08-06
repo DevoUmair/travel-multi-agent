@@ -48,45 +48,6 @@ async def initialize_tavily_tool():
         return _tavily_tool
 
 
-async def tavily_mcp_search(query: str):
-    """Invoke Tavily MCP search."""
-    try:
-        tool = await initialize_tavily_tool()
-        return await tool.ainvoke({"query": query})
-    except Exception as e:
-        logger.error(f"Tavily MCP search failed: {e}")
-        return f"Hotel/Web search unavailable: {str(e)}"
-
-
-async def initialize_aviation_tools():
-    global _aviation_tools
-    if _aviation_tools:
-        return _aviation_tools
-
-    async with _lock:
-        if _aviation_tools:
-            return _aviation_tools
-
-        tools = await client.get_tools(server_name="aviationstack")
-        _aviation_tools = {tool.name: tool for tool in tools}
-        if not _aviation_tools:
-            raise RuntimeError("AviationStack MCP connected but returned no tools.")
-        return _aviation_tools
-
-
-async def aviation_mcp_call(tool_name: str, tool_args: dict = None):
-    """Invoke an AviationStack MCP tool by name."""
-    try:
-        tools = await initialize_aviation_tools()
-        tool = tools.get(tool_name)
-        if tool is None:
-            raise ValueError(f"AviationStack tool '{tool_name}' not found.")
-        return await tool.ainvoke(tool_args or {})
-    except Exception as e:
-        logger.error(f"AviationStack MCP call '{tool_name}' failed: {e}")
-        return f"Flight information unavailable: {str(e)}"
-
-
 async def initialize_weather_tools():
     global _weather_tool, _forecast_tool
     if _weather_tool is not None and _forecast_tool is not None:
@@ -109,23 +70,62 @@ async def initialize_weather_tools():
         return _weather_tool, _forecast_tool
 
 
-async def weather_mcp_search(city: str):
+async def initialize_aviation_tools():
+    global _aviation_tools
+    if _aviation_tools:
+        return _aviation_tools
+
+    async with _lock:
+        if _aviation_tools:
+            return _aviation_tools
+
+        tools = await client.get_tools(server_name="aviationstack")
+        _aviation_tools = {tool.name: tool for tool in tools}
+        if not _aviation_tools:
+            raise RuntimeError("AviationStack MCP connected but returned no tools.")
+        return _aviation_tools
+
+
+async def tavily_mcp_call(query: str):
+    """Invoke Tavily MCP search tool."""
+    try:
+        tool = await initialize_tavily_tool()
+        return await tool.ainvoke({"query": query})
+    except Exception as e:
+        logger.error(f"Tavily MCP call failed: {e}")
+        return f"Hotel/Web search unavailable: {str(e)}"
+
+
+async def aviation_mcp_call(tool_name: str, tool_args: dict = None):
+    """Invoke an AviationStack MCP tool by name."""
+    try:
+        tools = await initialize_aviation_tools()
+        tool = tools.get(tool_name)
+        if tool is None:
+            raise ValueError(f"AviationStack tool '{tool_name}' not found.")
+        return await tool.ainvoke(tool_args or {})
+    except Exception as e:
+        logger.error(f"AviationStack MCP call '{tool_name}' failed: {e}")
+        return f"Flight information unavailable: {str(e)}"
+
+
+async def weather_mcp_call(city: str):
     """Invoke Weather MCP current weather tool."""
     try:
         w_tool, _ = await initialize_weather_tools()
         return await w_tool.ainvoke({"city": city})
     except Exception as e:
-        logger.error(f"Weather MCP search failed: {e}")
+        logger.error(f"Weather MCP call failed: {e}")
         return f"Current weather unavailable: {str(e)}"
 
 
-async def forecast_mcp_search(city: str):
+async def forecast_mcp_call(city: str):
     """Invoke Weather MCP forecast tool."""
     try:
         _, f_tool = await initialize_weather_tools()
         return await f_tool.ainvoke({"city": city})
     except Exception as e:
-        logger.error(f"Forecast MCP search failed: {e}")
+        logger.error(f"Forecast MCP call failed: {e}")
         return f"Weather forecast unavailable: {str(e)}"
 
 

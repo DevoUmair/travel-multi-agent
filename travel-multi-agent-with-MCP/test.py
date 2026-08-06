@@ -1,5 +1,5 @@
 import asyncio
-from mcp_client.tools import get_all_tools
+from mcp_client.adapters import get_all_tools
 
 async def main():
     print("Testing MCP tools connectivity...")

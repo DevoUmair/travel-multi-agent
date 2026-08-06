@@ -19,10 +19,10 @@ from graph.nodes import (
 
 
 def get_checkpointer():
-    """Set up PostgresSaver if DATABASE_URL is available and valid, otherwise fallback to MemorySaver."""
+    """Set up PostgresSaver if DATABASE_URL is available, otherwise fallback to MemorySaver (or None for LangGraph CLI)."""
     if os.getenv("LANGGRAPH_DEV") == "1":
-        logger.info("LangGraph Studio dev mode detected: using internal checkpointer.")
-        return MemorySaver()
+        logger.info("LangGraph CLI/Studio mode detected: disabling custom checkpointer.")
+        return None
 
     if not DATABASE_URL:
         logger.info("DATABASE_URL not found. Falling back to MemorySaver checkpointer.")
@@ -65,7 +65,10 @@ workflow.add_edge("itinerary_agent", "final_agent")
 workflow.add_edge("final_agent", END)
 
 checkpointer = get_checkpointer()
-travel_graph = workflow.compile(checkpointer=checkpointer)
+if checkpointer is not None:
+    travel_graph = workflow.compile(checkpointer=checkpointer)
+else:
+    travel_graph = workflow.compile()
 
 
 def run_travel_agent(user_input: str, thread_id: str | None = None) -> dict:
