@@ -1,7 +1,7 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "travel_agent": "./backend.py:travel_graph"
+    "travel_agent": "./graph/workflow.py:travel_graph"
   },
   "env": ".env"
 }

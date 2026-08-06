@@ -1,23 +1,21 @@
-from pathlib import Path
+import asyncio
 import traceback
+from pathlib import Path
 import uvicorn
-
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-import asyncio
-from backend import run_travel_agent
 
-BASE_DIR = Path(__file__).resolve().parent
+from config.settings import BASE_DIR, logger
+from graph.workflow import run_travel_agent
 
 app = FastAPI(
     title="Travel Multi Agent",
-    description="LangGraph Multi-Agent Travel Planner with FastAPI Frontend",
+    description="LangGraph Multi-Agent Travel Planner with MCP Integration",
     version="1.0.0"
 )
-
 
 app.mount(
     "/static",
@@ -25,17 +23,14 @@ app.mount(
     name="static"
 )
 
-
 templates = Jinja2Templates(
     directory=str(BASE_DIR / "templates")
 )
 
 
-
 class TravelRequest(BaseModel):
     message: str
     thread_id: str | None = None
-
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -61,6 +56,7 @@ async def travel_planner(request_data: TravelRequest):
                 }
             )
 
+        logger.info(f"Processing travel request: {user_message[:50]}...")
         result = await asyncio.to_thread(
             run_travel_agent,
             user_input=user_message,
@@ -74,15 +70,15 @@ async def travel_planner(request_data: TravelRequest):
                 "answer": result["answer"],
                 "flight_results": result["flight_results"],
                 "hotel_results": result["hotel_results"],
+                "weather_results": result["weather_results"],
                 "itinerary": result["itinerary"],
                 "llm_calls": result["llm_calls"],
             }
         )
 
     except Exception as e:
-        print("ERROR:", e)
+        logger.error(f"Error processing travel request: {e}")
         traceback.print_exc()
-
         return JSONResponse(
             status_code=500,
             content={
@@ -90,7 +86,6 @@ async def travel_planner(request_data: TravelRequest):
                 "error": str(e)
             }
         )
-
 
 
 @app.get("/health")
@@ -104,7 +99,6 @@ async def health_check():
 @app.get("/favicon.ico")
 async def favicon():
     return JSONResponse(content={})
-
 
 
 if __name__ == "__main__":

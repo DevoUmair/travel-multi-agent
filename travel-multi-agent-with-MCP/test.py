@@ -1,9 +1,10 @@
 import asyncio
-from mcp_client import get_all_tools 
+from mcp_client.tools import get_all_tools
 
 async def main():
-    await get_all_tools()
+    print("Testing MCP tools connectivity...")
+    tools = await get_all_tools()
+    print(f"Total tools loaded: {len(tools)}")
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
-
+    asyncio.run(main())
