@@ -9,6 +9,12 @@ A comprehensive multi-agent AI travel planning platform built with **LangGraph**
 
 ---
 
+## 🖼️ Application Preview
+
+![TripMate AI — Application UI](assets/application.png)
+
+---
+
 ## 📂 Repository Structure
 
 This repository is organized into distinct project implementations and architectural assets:

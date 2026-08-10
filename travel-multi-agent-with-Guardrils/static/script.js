@@ -1,6 +1,35 @@
 let currentThreadId = localStorage.getItem("travel_thread_id") || null;
 let latestAnswerMarkdown = "";
 
+// ===== MODAL HELPERS =====
+function openApprovalModal(approvalRequest) {
+    const modal = document.getElementById("approvalSection");
+    const msgBadge = document.getElementById("approvalMessage");
+
+    if (msgBadge && approvalRequest) {
+        msgBadge.textContent = approvalRequest;
+    }
+
+    // Make it visible first (display:flex), then trigger CSS transition
+    modal.style.display = "flex";
+    // Use rAF so the browser registers the display change before adding active
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            modal.classList.add("active");
+        });
+    });
+
+    document.body.style.overflow = "hidden";
+}
+
+function closeApprovalModal() {
+    const modal = document.getElementById("approvalSection");
+    modal.classList.remove("active");
+    document.body.style.overflow = "";
+    // Hide after transition completes
+    setTimeout(() => { modal.style.display = "none"; }, 320);
+}
+
 function setPrompt(text) {
     document.getElementById("userInput").value = text;
 }
@@ -41,8 +70,6 @@ function showResult(answer, threadId, requiresApproval = false, approvalRequest 
     const resultSection = document.getElementById("resultSection");
     const resultBox = document.getElementById("resultBox");
     const threadInfo = document.getElementById("threadInfo");
-    const approvalSection = document.getElementById("approvalSection");
-    const approvalMessage = document.getElementById("approvalMessage");
 
     if (typeof marked !== "undefined") {
         resultBox.innerHTML = marked.parse(answer);
@@ -52,21 +79,13 @@ function showResult(answer, threadId, requiresApproval = false, approvalRequest 
 
     threadInfo.textContent = `Thread ID: ${threadId}`;
 
-    if (requiresApproval) {
-        approvalSection.classList.remove("hidden");
-        if (approvalRequest) {
-            approvalMessage.textContent = approvalRequest;
-        }
-    } else {
-        approvalSection.classList.add("hidden");
-    }
-
     resultSection.classList.remove("hidden");
+    resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    resultSection.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    // Show approval modal after a short delay so the user sees the draft first
+    if (requiresApproval) {
+        setTimeout(() => openApprovalModal(approvalRequest), 900);
+    }
 }
 
 async function sendMessage() {
@@ -123,14 +142,14 @@ async function submitApproval(isApproved) {
         return;
     }
 
+    // Close modal immediately
+    closeApprovalModal();
     setLoading(true);
 
     try {
         const response = await fetch("/api/travel/approve", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 thread_id: currentThreadId,
                 approved: isApproved,
@@ -144,10 +163,7 @@ async function submitApproval(isApproved) {
             throw new Error(data.error || "Something went wrong during approval.");
         }
 
-        // Hide approval section immediately 
-        document.getElementById("approvalSection").classList.add("hidden");
-        feedbackInput.value = ""; // clear feedback
-
+        feedbackInput.value = "";
         showResult(data.answer, data.thread_id, data.requires_approval, data.approval_request);
 
     } catch (error) {
@@ -236,4 +252,13 @@ document.addEventListener("keydown", function(event) {
     if (event.ctrlKey && event.key === "Enter") {
         sendMessage();
     }
+    // ESC to close modal
+    if (event.key === "Escape") {
+        closeApprovalModal();
+    }
+});
+
+// Close modal when clicking the backdrop
+document.getElementById("approvalSection").addEventListener("click", function(e) {
+    if (e.target === this) closeApprovalModal();
 });
