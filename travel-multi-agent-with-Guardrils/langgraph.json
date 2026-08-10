@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "travel_agent": "./graph/workflow.py:travel_graph"
+  },
+  "env": ".env"
+}

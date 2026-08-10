@@ -1,0 +1,7 @@
+{
+  "venvPath": "D:/study/travel-multi-agent",
+  "venv": ".venv",
+  "extraPaths": [
+    "D:/study/travel-multi-agent/.venv/Lib/site-packages"
+  ]
+}
