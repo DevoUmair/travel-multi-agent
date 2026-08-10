@@ -7,7 +7,9 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import HumanMessage
 from langgraph.types import Command, interrupt
+from typing import Any
 
+from utils.helpers import get_empty_constraints
 from config.settings import DATABASE_URL, logger
 from graph.state import TravelState
 from graph.nodes import (
@@ -104,38 +106,38 @@ def route_after_agent(current_agent: str):
 # =========================
 # Build Graph
 # =========================
-graph = StateGraph(TravelState)
+workflow = StateGraph(TravelState)
 
-graph.add_node("supervisor", supervisor_agent)
-graph.add_node("guardrail_blocked", guardrail_blocked_agent)
-graph.add_node("flight_agent", flight_agent)
-graph.add_node("hotel_agent", hotel_agent)
-graph.add_node("weather_agent", weather_agent)
-graph.add_node("budget_agent", budget_agent)
-graph.add_node("itinerary_agent", itinerary_agent)
-graph.add_node("human_approval", human_approval_agent)
-graph.add_node("final_agent", final_agent)
+workflow.add_node("supervisor", supervisor_agent)
+workflow.add_node("guardrail_blocked", guardrail_blocked_agent)
+workflow.add_node("flight_agent", flight_agent)
+workflow.add_node("hotel_agent", hotel_agent)
+workflow.add_node("weather_agent", weather_agent)
+workflow.add_node("budget_agent", budget_agent)
+workflow.add_node("itinerary_agent", itinerary_agent)
+workflow.add_node("human_approval", human_approval_agent)
+workflow.add_node("final_agent", final_agent)
 
-graph.add_edge(START, "supervisor")
-graph.add_conditional_edges("supervisor", route_from_supervisor, ROUTE_MAP)
+workflow.add_edge(START, "supervisor")
+workflow.add_conditional_edges("supervisor", route_from_supervisor, ROUTE_MAP)
 
-graph.add_conditional_edges(
+workflow.add_conditional_edges(
     "flight_agent", route_after_agent("flight_agent"), ROUTE_MAP
 )
-graph.add_conditional_edges(
+workflow.add_conditional_edges(
     "hotel_agent", route_after_agent("hotel_agent"), ROUTE_MAP
 )
-graph.add_conditional_edges(
+workflow.add_conditional_edges(
     "weather_agent", route_after_agent("weather_agent"), ROUTE_MAP
 )
-graph.add_conditional_edges(
+workflow.add_conditional_edges(
     "budget_agent", route_after_agent("budget_agent"), ROUTE_MAP
 )
 
-graph.add_edge("itinerary_agent", "human_approval")
-graph.add_edge("human_approval", "final_agent")
-graph.add_edge("final_agent", END)
-graph.add_edge("guardrail_blocked", END)
+workflow.add_edge("itinerary_agent", "human_approval")
+workflow.add_edge("human_approval", "final_agent")
+workflow.add_edge("final_agent", END)
+workflow.add_edge("guardrail_blocked", END)
 
 checkpointer = get_checkpointer()
 if checkpointer is not None:
@@ -216,7 +218,7 @@ def run_travel_agent(user_input: str, thread_id: str | None = None) -> dict:
         "guardrail_allowed": True,
         "guardrail_reason": "",
         "selected_agents": [],
-        "trip_constraints": _empty_constraints(),
+        "trip_constraints": get_empty_constraints(),
         "supervisor_reasoning": "",
         "flight_results": "",
         "hotel_results": "",

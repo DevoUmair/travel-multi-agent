@@ -32,6 +32,10 @@ class TravelRequest(BaseModel):
     message: str
     thread_id: str | None = None
 
+class ApprovalRequest(BaseModel):
+    thread_id: str
+    approved: bool
+    feedback: str = ""
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -66,13 +70,7 @@ async def travel_planner(request_data: TravelRequest):
         return JSONResponse(
             content={
                 "success": True,
-                "thread_id": result["thread_id"],
-                "answer": result["answer"],
-                "flight_results": result["flight_results"],
-                "hotel_results": result["hotel_results"],
-                "weather_results": result["weather_results"],
-                "itinerary": result["itinerary"],
-                "llm_calls": result["llm_calls"],
+                **result
             }
         )
 

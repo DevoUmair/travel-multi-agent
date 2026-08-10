@@ -11,6 +11,7 @@ from mcp_client.adapters import (
     forecast_mcp_call,
     extract_destination
 )
+from utils.helpers import extract_json_from_llm, get_empty_constraints
 
 
 
@@ -50,28 +51,6 @@ def _llm_text(system_prompt: str, user_prompt: str) -> str:
     return str(response.content)
 
 
-def _json_from_llm(text: str) -> dict[str, Any]:
-    """Extract the first complete JSON object returned by the model."""
-    start = text.find("{")
-    end = text.rfind("}")
-
-    if start == -1 or end == -1 or end < start:
-        raise ValueError("The model did not return a JSON object.")
-
-    return json.loads(text[start : end + 1])
-
-
-def _empty_constraints() -> dict[str, Any]:
-    return {
-        "destination": "",
-        "origin": "",
-        "duration": "",
-        "budget": "",
-        "travel_style": "",
-        "special_preferences": [],
-    }
-
-
 # =========================
 # Supervisor Agent + Input Guardrail
 # =========================
@@ -106,7 +85,7 @@ User request:
             "Return strict JSON only.",
             guardrail_prompt,
         )
-        guardrail_result = _json_from_llm(guardrail_raw)
+        guardrail_result = extract_json_from_llm(guardrail_raw)
         allowed = bool(guardrail_result.get("allowed", True))
         guardrail_reason = str(guardrail_result.get("reason", "")).strip()
         llm_calls += 1
@@ -125,7 +104,7 @@ User request:
             "guardrail_allowed": False,
             "guardrail_reason": reason,
             "selected_agents": [],
-            "trip_constraints": _empty_constraints(),
+            "trip_constraints": get_empty_constraints(),
             "supervisor_reasoning": reason,
             "final_response": reason,
             "messages": [AIMessage(content=f"Guardrail blocked request: {reason}")],
@@ -166,7 +145,7 @@ User request:
             "You route work to travel specialist agents. Return strict JSON only.",
             supervisor_prompt,
         )
-        parsed = _json_from_llm(supervisor_raw)
+        parsed = extract_json_from_llm(supervisor_raw)
         requested_agents = parsed.get("selected_agents", [])
         selected_agents = [
             name for name in AGENT_ORDER
@@ -177,7 +156,7 @@ User request:
         if "itinerary_agent" not in selected_agents:
             selected_agents.append("itinerary_agent")
 
-        constraints = _empty_constraints()
+        constraints = get_empty_constraints()
         parsed_constraints = parsed.get("trip_constraints", {})
         if isinstance(parsed_constraints, dict):
             constraints.update(parsed_constraints)
@@ -188,7 +167,7 @@ User request:
         print(f"Supervisor fallback used: {exc}")
         # Original workflow behavior is preserved as the fallback.
         selected_agents = AGENT_ORDER.copy()
-        constraints = _empty_constraints()
+        constraints = get_empty_constraints()
         reasoning = (
             "Supervisor parsing failed, so the original full travel workflow "
             "was selected as a safe fallback."
@@ -287,7 +266,7 @@ def hotel_agent(state: TravelState):
 
     try:
         hotel_results = asyncio.run(
-            tavily_mcp_search(query)
+            tavily_mcp_call(query)
         )
 
     except Exception as exc:
@@ -327,11 +306,11 @@ def weather_agent(state: TravelState):
 
     try:
         weather_data = asyncio.run(
-            weather_mcp_search(city)
+            weather_mcp_call(city)
         )
 
         forecast_data = asyncio.run(
-            forecast_mcp_search(city)
+            forecast_mcp_call(city)
         )
 
         weather_results = f"""

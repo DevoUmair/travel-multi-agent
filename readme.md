@@ -25,7 +25,19 @@ travel-multi-agent/
 │   ├── tests/                           # Diagnostic test scripts & debugging utilities
 │   ├── app.py                           # FastAPI web application entrypoint
 │   └── langgraph.json                   # LangGraph CLI & Studio configuration
+├── travel-multi-agent-with-Guardrils/   # 🛡️ Implementation with Input Guardrails and Human-in-the-Loop (HITL) approval
+│   ├── config/                          # Settings & environment loading
+│   ├── graph/                           # Supervisor, HITL nodes, and dynamic routing
+│   ├── mcp_client/                      # MCP adapters
+│   ├── mcp_server/                      # Local Weather server
+│   ├── utils/                           # Shared utility functions
+│   ├── app.py                           # FastAPI web application with /approve endpoint
+│   └── langgraph.json                   # LangGraph CLI configuration
 ├── travel-multi-agent-with-LangGraph/   # 🏛️ Baseline implementation (Standard LangGraph workflow)
+│   ├── config/                          # Settings & environment loading
+│   ├── graph/                           # Standard LangGraph definitions and nodes
+│   ├── tools/                           # Flight and web search integrations
+│   └── app.py                           # FastAPI app entry point
 ├── excalidraw/                          # 🎨 Architecture diagrams & workflow visual designs
 ├── .env.example                         # Environment configuration template
 └── requirements.txt                     # Combined dependencies
@@ -45,13 +57,22 @@ The primary implementation features a modular, enterprise-grade architecture whe
 
 ---
 
-## 🏛️ 2. Standard LangGraph System (`travel-multi-agent-with-LangGraph`)
+## 🛡️ 2. Guardrails and Human-in-the-Loop (`travel-multi-agent-with-Guardrils`)
+
+This implementation builds upon the MCP architecture by adding safety and human oversight:
+* **Input Guardrail**: A supervisor agent verifies whether user requests are valid travel inquiries and filters out irrelevant or unsafe prompts.
+* **Specialized Budget Agent**: Analyzes trip feasibility, cost categories, and money-saving tips.
+* **Human-in-the-Loop (HITL)**: LangGraph is configured to pause workflow execution and present a draft itinerary to the user for approval or revision via the web UI. Once the user approves or supplies feedback, the system generates the final output.
+
+---
+
+## 🏛️ 3. Standard LangGraph System (`travel-multi-agent-with-LangGraph`)
 
 The original baseline implementation demonstrating core **LangGraph StateGraph** orchestration, PostgreSQL thread checkpointing (`PostgresSaver`), and state transitions prior to integrating Model Context Protocol abstractions.
 
 ---
 
-## 🎨 3. Architectural Diagrams & Resources (`excalidraw`)
+## 🎨 4. Architectural Diagrams & Resources (`excalidraw`)
 
 Contains visual flowcharts and state diagrams (`.excalidraw` files) detailing the multi-agent graph state transitions, MCP client-server topology, and node execution order.
 
@@ -97,7 +118,7 @@ pip install -r requirements.txt
 ## 💻 Running the Application
 
 ### A. Run FastAPI Web Server
-Navigate to the MCP project directory and run `app.py`:
+Navigate to your desired project directory (e.g., `travel-multi-agent-with-MCP` or `travel-multi-agent-with-Guardrils`) and run `app.py`:
 
 ```bash
 cd travel-multi-agent-with-MCP
@@ -106,7 +127,7 @@ python app.py
 Open your browser at `http://127.0.0.1:8000` to interact with the web UI.
 
 ### B. Run with LangGraph Studio / CLI
-To test and visualize the agent workflow in **LangGraph Studio**:
+To test and visualize the agent workflow in **LangGraph Studio**, navigate to a directory with a `langgraph.json` file:
 
 ```bash
 cd travel-multi-agent-with-MCP

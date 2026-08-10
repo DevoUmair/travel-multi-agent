@@ -35,12 +35,14 @@ function hideError() {
     errorBox.textContent = "";
 }
 
-function showResult(answer, threadId) {
+function showResult(answer, threadId, requiresApproval = false, approvalRequest = "") {
     latestAnswerMarkdown = answer;
 
     const resultSection = document.getElementById("resultSection");
     const resultBox = document.getElementById("resultBox");
     const threadInfo = document.getElementById("threadInfo");
+    const approvalSection = document.getElementById("approvalSection");
+    const approvalMessage = document.getElementById("approvalMessage");
 
     if (typeof marked !== "undefined") {
         resultBox.innerHTML = marked.parse(answer);
@@ -49,6 +51,15 @@ function showResult(answer, threadId) {
     }
 
     threadInfo.textContent = `Thread ID: ${threadId}`;
+
+    if (requiresApproval) {
+        approvalSection.classList.remove("hidden");
+        if (approvalRequest) {
+            approvalMessage.textContent = approvalRequest;
+        }
+    } else {
+        approvalSection.classList.add("hidden");
+    }
 
     resultSection.classList.remove("hidden");
 
@@ -92,7 +103,52 @@ async function sendMessage() {
         currentThreadId = data.thread_id;
         localStorage.setItem("travel_thread_id", currentThreadId);
 
-        showResult(data.answer, data.thread_id);
+        showResult(data.answer, data.thread_id, data.requires_approval, data.approval_request);
+
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function submitApproval(isApproved) {
+    hideError();
+
+    const feedbackInput = document.getElementById("feedbackInput");
+    const feedback = feedbackInput.value.trim();
+
+    if (!isApproved && !feedback) {
+        showError("Please enter your feedback before requesting a revision.");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        const response = await fetch("/api/travel/approve", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                thread_id: currentThreadId,
+                approved: isApproved,
+                feedback: feedback
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Something went wrong during approval.");
+        }
+
+        // Hide approval section immediately 
+        document.getElementById("approvalSection").classList.add("hidden");
+        feedbackInput.value = ""; // clear feedback
+
+        showResult(data.answer, data.thread_id, data.requires_approval, data.approval_request);
 
     } catch (error) {
         showError(error.message);

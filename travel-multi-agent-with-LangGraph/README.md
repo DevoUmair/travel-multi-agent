@@ -1,4 +1,4 @@
-# ✈️ TripMate AI — A Multi-Agent Travel Planner with LangGraph
+# ✈️ TripMate AI — A Multi-Agent Travel Planner (Standard LangGraph)
 
 An open-source AI travel planner that turns a natural-language trip request into a practical travel plan with flight suggestions, hotel ideas, and a day-by-day itinerary. The project uses a multi-agent workflow built with LangGraph, LangChain, and FastAPI.
 
@@ -40,7 +40,8 @@ all coordinated through a LangGraph workflow.
 ```text
 .
 ├── app.py                # FastAPI app entry point
-├── backend.py            # LangGraph travel workflow
+├── config/               # Application configuration and settings
+├── graph/                # LangGraph definition, nodes, and workflow
 ├── requirements.txt      # Python dependencies
 ├── static/               # Static frontend assets
 ├── templates/            # HTML templates

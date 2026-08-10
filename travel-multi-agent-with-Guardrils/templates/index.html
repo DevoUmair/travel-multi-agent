@@ -106,6 +106,18 @@
                 <div id="resultBox" class="result-box"></div>
             </div>
 
+            <div id="approvalSection" class="approval-section hidden">
+                <div class="approval-card">
+                    <h3>Draft Review Required</h3>
+                    <p id="approvalMessage">Please review the draft itinerary above.</p>
+                    <textarea id="feedbackInput" placeholder="If you'd like changes, enter your feedback here before rejecting..."></textarea>
+                    <div class="approval-actions">
+                        <button id="approveBtn" class="approve-btn" onclick="submitApproval(true)">Approve & Finalize</button>
+                        <button id="rejectBtn" class="reject-btn" onclick="submitApproval(false)">Request Revision</button>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
         <section id="errorBox" class="error-box hidden"></section>
