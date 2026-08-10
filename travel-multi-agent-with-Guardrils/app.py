@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from config.settings import BASE_DIR, logger
-from graph.workflow import run_travel_agent
+from graph.workflow import run_travel_agent , resume_travel_agent
 
 app = FastAPI(
     title="Travel Multi Agent",
@@ -85,6 +85,47 @@ async def travel_planner(request_data: TravelRequest):
                 "success": False,
                 "error": str(e)
             }
+        )
+
+
+@app.post("/api/travel/approve")
+async def approve_travel_plan(request_data: ApprovalRequest):
+    try:
+        if not request_data.approved and not request_data.feedback.strip():
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "error": "Please provide revision feedback when rejecting the draft.",
+                },
+            )
+
+        logger.info(f"Resyming travel request: {request_data.thread_id}")
+        result = await asyncio.to_thread(
+            resume_travel_agent,
+            thread_id=request_data.thread_id,
+            approved=request_data.approved,
+            feedback=request_data.feedback,
+        )
+
+
+        return JSONResponse(
+            content={
+                "success": True,
+                **result,
+            }
+        )
+
+    except Exception as exc:
+        print("APPROVAL ERROR:", exc)
+        traceback.print_exc()
+
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(exc),
+            },
         )
 
 
